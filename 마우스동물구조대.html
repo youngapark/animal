@@ -1,0 +1,996 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>우당탕탕! 마우스 동물 구조대</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts - Gowun Dodum (초등 귀여운 폰트 느낌) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&family=Inter:wght@400;700&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Gowun Dodum', 'Inter', sans-serif;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        /* 우클릭 메뉴 방지 */
+        .no-context {
+            context-menu: none;
+        }
+        /* 자연스러운 둥글기 및 쉐도우 */
+        .bubble-btn {
+            box-shadow: 0 8px 0 #1b4332;
+            transition: all 0.1s ease;
+        }
+        .bubble-btn:active {
+            transform: translateY(4px);
+            box-shadow: 0 4px 0 #1b4332;
+        }
+        .bubble-btn-orange {
+            box-shadow: 0 8px 0 #7c2d12;
+            transition: all 0.1s ease;
+        }
+        .bubble-btn-orange:active {
+            transform: translateY(4px);
+            box-shadow: 0 4px 0 #7c2d12;
+        }
+        /* 동물의 둥둥 뜨는 팅김 애니메이션 */
+        @keyframes floating {
+            0% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-6px) rotate(2deg); }
+            100% { transform: translateY(0px) rotate(0deg); }
+        }
+        .floating-animal {
+            animation: floating 2.5s ease-in-out infinite;
+        }
+        /* 우리 흔들림 애니메이션 (탈출 위기) */
+        @keyframes shake {
+            0% { transform: translate(1px, 1px) rotate(0deg); }
+            10% { transform: translate(-1px, -2px) rotate(-1deg); }
+            20% { transform: translate(-3px, 0px) rotate(1deg); }
+            30% { transform: translate(0px, 2px) rotate(0deg); }
+            40% { transform: translate(1px, -1px) rotate(1deg); }
+            50% { transform: translate(-1px, 2px) rotate(-1deg); }
+            60% { transform: translate(-3px, 1px) rotate(0deg); }
+            70% { transform: translate(2px, 1px) rotate(-1deg); }
+            80% { transform: translate(-1px, -1px) rotate(1deg); }
+            90% { transform: translate(2px, 2px) rotate(0deg); }
+            100% { transform: translate(1px, -2px) rotate(-1deg); }
+        }
+        .shaking-cage {
+            animation: shake 0.5s infinite;
+        }
+        /* 성공 폭죽 파티클 */
+        .confetti {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            animation: confettiFall 3s linear infinite;
+            pointer-events: none;
+            z-index: 100;
+        }
+        @keyframes confettiFall {
+            0% { transform: translateY(-10px) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(800px) rotate(360deg); opacity: 0; }
+        }
+    </style>
+</head>
+<body class="bg-sky-100 min-h-screen flex flex-col items-center justify-between p-4 overflow-x-hidden">
+
+    <!-- 헤더 영역 -->
+    <header class="w-full max-w-5xl bg-white rounded-2xl shadow-md p-4 flex flex-col md:flex-row items-center justify-between gap-4 mt-2 border-b-4 border-sky-300">
+        <div class="flex items-center gap-3">
+            <span class="text-4xl">🦁</span>
+            <div>
+                <h1 class="text-2xl font-bold text-sky-800">우당탕탕! 마우스 동물 구조대</h1>
+                <p class="text-sm text-sky-600 font-bold">초등 2학년 맞춤형 마우스 조작 모험 게임</p>
+            </div>
+        </div>
+        <!-- 점수 및 상태 표시판 -->
+        <div class="flex items-center gap-4 bg-sky-50 px-4 py-2 rounded-xl border border-sky-200">
+            <div class="text-center">
+                <span class="text-xs text-sky-500 font-bold block">현재 단계</span>
+                <span id="stage-badge" class="text-base font-bold text-sky-700 bg-sky-200 px-3 py-0.5 rounded-full">1단계 : 얼리고 드래그</span>
+            </div>
+            <div class="h-8 w-[1px] bg-sky-200"></div>
+            <div class="text-center">
+                <span id="score-label" class="text-xs text-emerald-500 font-bold block">얼린 동물 수</span>
+                <span id="score-badge" class="text-xl font-black text-emerald-600">0 / 10</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- 메인 게임 영역 컨테이너 -->
+    <main class="w-full max-w-5xl flex-grow my-4 flex items-center justify-center relative">
+        
+        <!-- 1. 시작 화면 (웰컴 스크린) - 간결하고 큼직하게 리뉴얼 -->
+        <div id="start-screen" class="bg-white rounded-3xl p-8 shadow-xl border-4 border-sky-300 text-center max-w-2xl w-full flex flex-col items-center gap-6 relative overflow-hidden z-10">
+            <div class="absolute -top-10 -left-10 text-8xl opacity-10">🦊</div>
+            <div class="absolute -bottom-10 -right-10 text-8xl opacity-10">🐼</div>
+            
+            <span class="text-6xl animate-bounce">🎒</span>
+            <h2 class="text-4xl font-extrabold text-slate-800 leading-snug">
+                우당탕탕!<br>
+                <span class="text-sky-600">마우스 동물 구조대</span>
+            </h2>
+            
+            <!-- 한눈에 쏙 들어오는 3단계 게임 설명판 -->
+            <div class="w-full space-y-4 my-2">
+                <div class="flex items-center gap-4 bg-sky-50 p-4 rounded-2xl border-2 border-sky-200">
+                    <span class="text-4xl">1️⃣</span>
+                    <div class="text-left">
+                        <h4 class="text-xl font-extrabold text-sky-800">동물 얼리기 (클릭!)</h4>
+                        <p class="text-slate-600 text-sm mt-0.5">뛰어다니는 동물을 <strong>마우스로 콕! 클릭</strong>해서 얼리세요.<br><span class="text-orange-600 font-bold">(2단계는 빠르게 따닥! 두 번 클릭)</span></p>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-4 bg-emerald-50 p-4 rounded-2xl border-2 border-emerald-200">
+                    <span class="text-4xl">2️⃣</span>
+                    <div class="text-left">
+                        <h4 class="text-xl font-extrabold text-emerald-800">우리로 이사하기 (드래그!)</h4>
+                        <p class="text-slate-600 text-sm mt-0.5">얼어서 멈춘 동물을 마우스로 꾹 누른 채 <strong>오른쪽 우리로 끌고 가요!</strong></p>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-4 bg-red-50 p-4 rounded-2xl border-2 border-red-200">
+                    <span class="text-4xl">3️⃣</span>
+                    <div class="text-left">
+                        <h4 class="text-xl font-extrabold text-red-800">자물쇠 잠그기 (우클릭!)</h4>
+                        <p class="text-slate-600 text-sm mt-0.5">동물들을 다 넣으면 <strong>3초 안에 마우스 오른쪽 버튼</strong>으로 자물쇠를 잠가요!</p>
+                    </div>
+                </div>
+            </div>
+
+            <button onclick="startGame()" class="bubble-btn bg-emerald-500 hover:bg-emerald-400 text-white font-black text-2xl px-10 py-5 rounded-2xl w-full border-b-8 border-emerald-700 transition duration-150 transform hover:scale-105">
+                동물 친구들 구하러 출발! 🚀
+            </button>
+            <p class="text-xs text-gray-400 mt-1"><i class="fa-solid fa-mouse"></i> 이 게임은 마우스 사용을 적극 추천해요!</p>
+        </div>
+
+        <!-- 2. 실제 플레이 화면 (플레이 존) -->
+        <div id="game-screen" class="hidden w-full h-[600px] bg-gradient-to-b from-sky-50 to-emerald-50 rounded-3xl border-4 border-sky-200 shadow-2xl relative overflow-hidden flex flex-col">
+            
+            <!-- 플레이 안내 가이드 가로형 배너 -->
+            <div id="guide-banner" class="w-full bg-amber-500 text-white py-3 px-6 text-center text-sm md:text-base font-bold flex items-center justify-center gap-2 shadow-md transition-colors duration-300">
+                <span class="animate-ping inline-flex h-2.5 w-2.5 rounded-full bg-white opacity-75"></span>
+                <span id="guide-text">1부: 도망치는 동물들을 마우스로 "한 번 클릭"하여 얼려보세요! (0/10마리 얼림)</span>
+            </div>
+
+            <!-- 플레이 운동장 (왼쪽: 초원, 오른쪽: 우리) -->
+            <div class="flex-grow w-full relative" id="game-field">
+                
+                <!-- 왼쪽 영역: 넓은 야생 초원 -->
+                <div class="absolute inset-y-0 left-0 w-2/3 p-4 pointer-events-none">
+                    <div class="w-full h-full border-2 border-dashed border-sky-200 rounded-2xl flex items-center justify-center relative">
+                        <span id="field-bg-text" class="text-slate-300 font-bold text-base md:text-lg pointer-events-none opacity-50">🌳 넓고 넓은 초원 (동물을 얼려주세요!) 🌳</span>
+                    </div>
+                </div>
+
+                <!-- 오른쪽 영역: 동물들의 안전한 우리 -->
+                <div id="cage-area" class="absolute top-4 right-4 bottom-4 w-[30%] bg-amber-100 rounded-3xl border-4 border-dashed border-amber-400 shadow-inner flex flex-col items-center justify-between p-4 z-0 transition-all duration-300">
+                    <div class="text-center pointer-events-none">
+                        <span class="text-xs bg-amber-200 text-amber-800 font-bold px-3 py-1 rounded-full"><i class="fa-solid fa-house"></i> 동물들의 집</span>
+                        <h3 class="text-sm font-bold text-amber-900 mt-2">안전한 우리</h3>
+                    </div>
+
+                    <!-- 우리 안의 동물들이 정렬될 그리드 영역 (10마리가 콤팩트하게 들어가도록 조정) -->
+                    <div id="cage-grid" class="w-full flex-grow grid grid-cols-2 gap-1.5 p-2 items-center justify-center max-h-[350px] overflow-y-auto pointer-events-none">
+                        <!-- 드롭된 동물들이 고정되어 안착할 자리 -->
+                    </div>
+
+                    <!-- 자물쇠 영역 -->
+                    <div id="lock-container" class="w-full flex flex-col items-center justify-center gap-1 bg-amber-50 border border-amber-300 rounded-2xl py-2 cursor-pointer transition-all duration-300 opacity-30 pointer-events-none">
+                        <span id="lock-icon" class="text-2xl text-slate-400 transition-transform duration-300">
+                            <i class="fa-solid fa-lock-open"></i>
+                        </span>
+                        <span id="lock-text" class="text-[10px] text-amber-800 font-bold text-center">우클릭으로 잠금<br>(동물 다 모으면 활성화!)</span>
+                    </div>
+                </div>
+
+                <!-- 동적 팁 레이블 (아이들이 잘못 조작할 때 띄워줄 안내용) -->
+                <div id="tip-bubble" class="absolute hidden bg-red-500 text-white text-xs font-bold px-3 py-1.5 rounded-xl shadow-lg pointer-events-none z-50 transform -translate-x-1/2 -translate-y-full transition-opacity duration-200">
+                    두 번 빠르게 따닥 더블클릭 하세요!
+                </div>
+
+                <!-- 동물 캐릭터들이 자유롭게 노닐 영역 (JS로 동적 추가 및 애니메이션 처리) -->
+                <div id="animals-container" class="absolute inset-y-0 left-0 w-2/3 h-full z-10">
+                    <!-- 동물 노드가 이 안에 동적으로 생성됨 -->
+                </div>
+
+                <!-- 긴박한 카운트다운 배지 -->
+                <div id="countdown-badge" class="hidden absolute top-1/2 left-1/3 transform -translate-x-1/2 -translate-y-1/2 bg-red-600 text-white rounded-full w-32 h-32 flex flex-col items-center justify-center shadow-2xl border-4 border-white z-30 animate-pulse">
+                    <span class="text-[11px] font-bold">동물 탈출까지</span>
+                    <span id="countdown-number" class="text-5xl font-black text-yellow-300">3</span>
+                    <span class="text-[11px] font-bold">초 전! 빨리 잠가요!</span>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- 3. 단계 완수 축하 모달 (팝업창) -->
+        <div id="stage-clear-modal" class="hidden absolute bg-white p-8 rounded-3xl shadow-2xl border-4 border-emerald-400 text-center max-w-md w-full z-40 flex flex-col items-center gap-4">
+            <span class="text-6xl text-emerald-500">🏆</span>
+            <h3 class="text-2xl font-bold text-emerald-800" id="modal-title">1단계 성공! 대단해요!</h3>
+            <p class="text-slate-600 text-sm leading-relaxed" id="modal-desc">마우스를 다루는 솜씨가 아주 훌륭합니다. 다음 2단계는 조금 더 빠르게 움직이는 장난꾸러기들이 나와요!</p>
+            <button onclick="nextStage()" class="bubble-btn bg-emerald-500 text-white font-bold px-8 py-3.5 rounded-2xl w-full border-b-4 border-emerald-700">
+                2단계 출발하기 (더블클릭!) ➡️
+            </button>
+        </div>
+
+        <!-- 4. 동물 탈출 경고 모달 -->
+        <div id="escape-modal" class="hidden absolute bg-white p-8 rounded-3xl shadow-2xl border-4 border-red-500 text-center max-w-md w-full z-40 flex flex-col items-center gap-4">
+            <span class="text-6xl text-red-500">🦁💨🦁💨</span>
+            <h3 class="text-2xl font-bold text-red-800">동물들이 탈출했어요! 😭</h3>
+            <p class="text-slate-600 text-sm leading-relaxed">우리를 3초 안에 잠그지 못해서 동물들이 문을 열고 도망쳤어요! 다시 구하러 가볼까요?</p>
+            <button onclick="retryCurrentStage()" class="bubble-btn bg-red-500 text-white font-bold px-8 py-3.5 rounded-2xl w-full border-b-4 border-red-700">
+                다시 동물을 구하러 가기 🔄
+            </button>
+        </div>
+
+        <!-- 5. 마침내 획득! 디지털 마우스 면허 획득 성공 축하 화면 (이름 입력 및 출력 삭제) -->
+        <div id="victory-screen" class="hidden bg-white rounded-3xl p-10 shadow-2xl border-4 border-amber-400 text-center max-w-xl w-full z-10 relative overflow-hidden">
+            <!-- 축하 데코레이션 배경 -->
+            <div class="absolute -top-10 -left-10 text-8xl opacity-15 rotate-12">🏆</div>
+            <div class="absolute -bottom-10 -right-10 text-8xl opacity-15 -rotate-12">🎉</div>
+
+            <div class="text-center space-y-6">
+                <span class="text-7xl animate-bounce inline-block">👑</span>
+                <h2 class="text-4xl font-extrabold text-amber-600">동물구조대 대성공!</h2>
+                
+                <div class="bg-amber-50 rounded-2xl p-6 border-2 border-amber-200">
+                    <p class="text-2xl font-black text-slate-800 leading-relaxed">
+                        축하합니다! 🎉<br>
+                        당신은 <span class="text-indigo-600 underline decoration-wavy">디지털 마우스 면허</span>에<br>
+                        멋지게 통과했습니다!
+                    </p>
+                </div>
+
+                <p class="text-base text-slate-500 font-bold leading-relaxed">
+                    클릭, 더블클릭, 드래그, 그리고 우클릭 잠금까지!<br>
+                    이제 마우스를 아주 자유롭고 훌륭하게 다룰 수 있어요! 👍
+                </p>
+            </div>
+
+            <!-- 하단 버튼단 (처음부터 다시 하기 단일 버튼화) -->
+            <div class="w-full mt-8">
+                <button onclick="restartGame()" class="bubble-btn bg-amber-500 hover:bg-amber-400 text-white font-extrabold text-xl px-8 py-4 rounded-2xl w-full border-b-8 border-amber-700 transition duration-150 transform hover:scale-105">
+                    <i class="fa-solid fa-rotate-left mr-2"></i> 처음부터 다시 연습할래요!
+                </button>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- 하단 카피라이트 및 안전 도우미 배너 -->
+    <footer class="w-full max-w-5xl bg-white/70 backdrop-blur rounded-2xl p-3 text-center text-xs text-slate-500 border border-slate-200 shadow-sm mt-2">
+        <p><i class="fa-solid fa-shield-cat text-emerald-500"></i> 안전 교육 Tip: 마우스를 쥘 때는 어깨와 손가락에 힘을 빼고 가볍게 얹는 느낌으로 잡아야 손이 피로하지 않아요!</p>
+        <p class="mt-1 text-[10px] text-slate-400">© 2026 초등학교 2학년 디지털 리터러시 수업 보조 도구 - 마우스 훈련대</p>
+    </footer>
+
+    <script>
+        /* ========================================================
+           브라우저 자체 내장 오디오 API를 이용한 음향 효과 엔진
+           (별도 외부 오디오 자원을 다운로드받지 않고 100% 실행 보장)
+           ======================================================== */
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+        function playSound(type) {
+            try {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+
+                const now = audioCtx.currentTime;
+
+                if (type === 'click') {
+                    // 가벼운 한 번 클릭 시 소리 (얼어붙는 날카로운 효과음)
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(800, now);
+                    osc.frequency.exponentialRampToValueAtTime(1500, now + 0.1);
+                    gain.gain.setValueAtTime(0.12, now);
+                    gain.gain.linearRampToValueAtTime(0, now + 0.1);
+                    osc.start(now);
+                    osc.stop(now + 0.1);
+                } else if (type === 'doubleclick') {
+                    // 더블클릭 성공 시 뾰뿅 소리
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(700, now);
+                    osc.frequency.setValueAtTime(1200, now + 0.05);
+                    gain.gain.setValueAtTime(0.12, now);
+                    gain.gain.linearRampToValueAtTime(0, now + 0.15);
+                    osc.start(now);
+                    osc.stop(now + 0.15);
+                } else if (type === 'drag') {
+                    // 드래그를 시작할 때 소리
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(400, now);
+                    osc.frequency.exponentialRampToValueAtTime(700, now + 0.12);
+                    gain.gain.setValueAtTime(0.15, now);
+                    gain.gain.linearRampToValueAtTime(0, now + 0.12);
+                    osc.start(now);
+                    osc.stop(now + 0.12);
+                } else if (type === 'drop') {
+                    // 우리에 골인했을 때 쏙 들어가는 만족스러운 소리
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(900, now);
+                    osc.frequency.exponentialRampToValueAtTime(300, now + 0.25);
+                    gain.gain.setValueAtTime(0.2, now);
+                    gain.gain.linearRampToValueAtTime(0, now + 0.25);
+                    osc.start(now);
+                    osc.stop(now + 0.25);
+                } else if (type === 'lock') {
+                    // 자물쇠를 잠글 때 강하고 육중한 소리 (철컥!)
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(180, now);
+                    osc.frequency.setValueAtTime(90, now + 0.06);
+                    gain.gain.setValueAtTime(0.3, now);
+                    gain.gain.linearRampToValueAtTime(0, now + 0.2);
+                    osc.start(now);
+                    osc.stop(now + 0.2);
+                } else if (type === 'fail') {
+                    // 잘못 조작하거나 놓쳤을 때 띠용 소리
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(350, now);
+                    osc.frequency.linearRampToValueAtTime(180, now + 0.25);
+                    gain.gain.setValueAtTime(0.15, now);
+                    gain.gain.linearRampToValueAtTime(0, now + 0.25);
+                    osc.start(now);
+                    osc.stop(now + 0.25);
+                } else if (type === 'phase') {
+                    // 1부에서 2부로 (얼리기 완료 후 드래그 가능 시점) 바뀔 때 효과음
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(440, now);
+                    osc.frequency.setValueAtTime(554.37, now + 0.1);
+                    osc.frequency.setValueAtTime(659.25, now + 0.2);
+                    gain.gain.setValueAtTime(0.15, now);
+                    gain.gain.linearRampToValueAtTime(0, now + 0.35);
+                    osc.start(now);
+                    osc.stop(now + 0.35);
+                } else if (type === 'warning_tick') {
+                    // 탈출 카운트다운의 매 초 경보 소리
+                    osc.type = 'square';
+                    osc.frequency.setValueAtTime(660, now);
+                    gain.gain.setValueAtTime(0.1, now);
+                    gain.gain.linearRampToValueAtTime(0, now + 0.1);
+                    osc.start(now);
+                    osc.stop(now + 0.1);
+                } else if (type === 'victory') {
+                    // 승리 팡파르 멜로디 (도-미-솔-도)
+                    const notes = [261.63, 329.63, 392.00, 523.25];
+                    notes.forEach((freq, idx) => {
+                        const o = audioCtx.createOscillator();
+                        const g = audioCtx.createGain();
+                        o.connect(g);
+                        g.connect(audioCtx.destination);
+                        o.type = 'triangle';
+                        o.frequency.setValueAtTime(freq, now + idx * 0.12);
+                        g.gain.setValueAtTime(0.15, now + idx * 0.12);
+                        g.gain.linearRampToValueAtTime(0, now + idx * 0.12 + 0.2);
+                        o.start(now + idx * 0.12);
+                        o.stop(now + idx * 0.12 + 0.2);
+                    });
+                }
+            } catch (e) {
+                console.log("AudioContext is blocked or unsupported.", e);
+            }
+        }
+
+        /* ========================================================
+           STREAMING_CHUNK: Setting up State variables and game templates...
+           게임 데이터 및 상태 관리 (총 10마리씩 풍성하게 배치)
+           ======================================================== */
+        const STAGE1_ANIMAL_TEMPLATES = [
+            { id: 1, name: '토끼', emoji: '🐰', bgClass: 'bg-pink-100' },
+            { id: 2, name: '판다', emoji: '🐼', bgClass: 'bg-slate-100' },
+            { id: 3, name: '여우', emoji: '🦊', bgClass: 'bg-orange-100' },
+            { id: 4, name: '고양이', emoji: '🐱', bgClass: 'bg-amber-50' },
+            { id: 5, name: '강아지', emoji: '🐶', bgClass: 'bg-amber-100' },
+            { id: 6, name: '아기곰', emoji: '🐻', bgClass: 'bg-yellow-100' },
+            { id: 7, name: '코알라', emoji: '🐨', bgClass: 'bg-zinc-100' },
+            { id: 8, name: '원숭이', emoji: '🐵', bgClass: 'bg-amber-200' },
+            { id: 9, name: '아기돼지', emoji: '🐷', bgClass: 'bg-rose-100' },
+            { id: 10, name: '햄스터', emoji: '🐹', bgClass: 'bg-orange-50' }
+        ];
+
+        const STAGE2_ANIMAL_TEMPLATES = [
+            { id: 11, name: '호랑이', emoji: '🐯', bgClass: 'bg-yellow-200' },
+            { id: 12, name: '사자', emoji: '🦁', bgClass: 'bg-amber-200' },
+            { id: 13, name: '늑대', emoji: '🐺', bgClass: 'bg-slate-200' },
+            { id: 14, name: '개구리', emoji: '🐸', bgClass: 'bg-emerald-100' },
+            { id: 15, name: '펭귄', emoji: '🐧', bgClass: 'bg-cyan-100' },
+            { id: 16, name: '병아리', emoji: '🐥', bgClass: 'bg-yellow-100' },
+            { id: 17, name: '유니콘', emoji: '🦄', bgClass: 'bg-purple-100' },
+            { id: 18, name: '문어', emoji: '🐙', bgClass: 'bg-rose-200' },
+            { id: 19, name: '다람쥐', emoji: '🐿️', bgClass: 'bg-orange-100' },
+            { id: 20, name: '공룡', emoji: '🐲', bgClass: 'bg-green-100' }
+        ];
+
+        let currentStage = 1; 
+        let totalStageAnimals = 10;
+        let animals = []; // 활성 동물 객체 리스트
+        let activeAnimal = null; // 현재 드래그 중인 동물
+        let isDragging = false; 
+        let mouseOffset = { x: 0, y: 0 }; 
+        let animationFrameId = null;
+
+        // 게임 제어용 핵심 플래그
+        let currentPhase = 'freeze_phase'; 
+        let frozenCount = 0;
+        let cagedCount = 0;
+
+        // 카운트다운 타이머 제어 변수
+        let lockTimer = null;
+        let countdownValue = 3;
+
+        const gameField = document.getElementById('game-field');
+        const animalsContainer = document.getElementById('animals-container');
+        const cageArea = document.getElementById('cage-area');
+        const cageGrid = document.getElementById('cage-grid');
+        const lockContainer = document.getElementById('lock-container');
+        const lockIcon = document.getElementById('lock-icon');
+        const lockText = document.getElementById('lock-text');
+        const scoreBadge = document.getElementById('score-badge');
+        const scoreLabel = document.getElementById('score-label');
+        const guideText = document.getElementById('guide-text');
+        const guideBanner = document.getElementById('guide-banner');
+
+        /* ========================================================
+           STREAMING_CHUNK: Implementing physics and movement routines...
+           동물들의 무작위 움직임 (물리 바운스 및 애니메이션 루프)
+           ======================================================== */
+        function initPhysics(animal, stage) {
+            // 스테이지별 동물 속도 계수 부여 (2단계는 훨씬 빠름)
+            const speedMultiplier = stage === 1 ? 0.7 : 1.4;
+            
+            // 바운더리 구역 설정 (초원 영역 전체에서 노닒)
+            const containerWidth = gameField.clientWidth * 0.62; 
+            const containerHeight = gameField.clientHeight;
+
+            animal.x = Math.random() * (containerWidth - 90) + 10;
+            animal.y = Math.random() * (containerHeight - 110) + 20;
+            
+            // 무작위 방향 벡터
+            let angle = Math.random() * Math.PI * 2;
+            let speed = (Math.random() * 0.6 + 0.4) * speedMultiplier;
+
+            animal.vx = Math.cos(angle) * speed;
+            animal.vy = Math.sin(angle) * speed;
+        }
+
+        function updatePhysics() {
+            const containerWidth = gameField.clientWidth * 0.63; 
+            const containerHeight = gameField.clientHeight;
+
+            animals.forEach(animal => {
+                // 'wandering' 상태(아직 얼어붙지 않은 상태)일 때만 스스로 움직임
+                if (animal.status === 'wandering') {
+                    animal.x += animal.vx;
+                    animal.y += animal.vy;
+
+                    // 좌우 벽 바운스
+                    if (animal.x < 10) {
+                        animal.x = 10;
+                        animal.vx *= -1;
+                    } else if (animal.x > containerWidth - 75) {
+                        animal.x = containerWidth - 75;
+                        animal.vx *= -1;
+                    }
+
+                    // 상하 벽 바운스
+                    if (animal.y < 10) {
+                        animal.y = 10;
+                        animal.vy *= -1;
+                    } else if (animal.y > containerHeight - 85) {
+                        animal.y = containerHeight - 85;
+                        animal.vy *= -1;
+                    }
+
+                    // 엘리먼트에 위치 반영
+                    if (animal.element) {
+                        animal.element.style.left = `${animal.x}px`;
+                        animal.element.style.top = `${animal.y}px`;
+                    }
+                }
+            });
+
+            animationFrameId = requestAnimationFrame(updatePhysics);
+        }
+
+        /* ========================================================
+           STREAMING_CHUNK: Managing clicking, double-clicking, and freezing...
+           마우스 입력 감지 및 얼리기(Freeze) 처리
+           ======================================================== */
+        function createAnimalElement(data) {
+            const div = document.createElement('div');
+            // 부드럽게 둥둥 뜨는 애니메이션 부여
+            div.className = `${data.bgClass} floating-animal absolute w-[72px] h-[72px] rounded-2xl flex flex-col items-center justify-center cursor-pointer shadow-md border-2 border-white transition-all select-none z-20`;
+            div.style.left = `${data.x}px`;
+            div.style.top = `${data.y}px`;
+            div.style.touchAction = 'none';
+
+            // 귀여운 내부 요소 구성
+            div.innerHTML = `
+                <span class="text-3xl pointer-events-none">${data.emoji}</span>
+                <span class="text-[9px] font-bold text-slate-600 pointer-events-none bg-white/90 px-1.5 py-0.5 rounded-full mt-1 border border-slate-100 shadow-sm leading-none">${data.name}</span>
+                <!-- 얼음 오버레이 -->
+                <div class="ice-layer absolute inset-0 bg-cyan-200/50 rounded-2xl border-2 border-cyan-400 flex items-center justify-center opacity-0 transition-opacity pointer-events-none z-10">
+                    <span class="text-3xl drop-shadow">❄️</span>
+                </div>
+            `;
+
+            // 클릭 이벤트 처리 (1단계 - 클릭하여 얼리기)
+            div.addEventListener('mousedown', (e) => {
+                if (e.button !== 0) return; // 마우스 좌클릭만 처리
+                
+                if (currentPhase === 'freeze_phase' && currentStage === 1) {
+                    freezeAnimal(data);
+                } else if (currentPhase === 'drag_phase' && data.status === 'frozen') {
+                    handleAnimalDragStart(data, e);
+                }
+            });
+
+            // 더블클릭 이벤트 처리 (2단계 - 더블클릭하여 얼리기)
+            div.addEventListener('dblclick', (e) => {
+                if (currentPhase === 'freeze_phase' && currentStage === 2) {
+                    freezeAnimal(data);
+                }
+            });
+
+            // 2단계에서 그냥 마우스 한 번만 누른 경우 -> 교육용 팁 말풍선 발사!
+            div.addEventListener('click', (e) => {
+                if (currentPhase === 'freeze_phase' && currentStage === 2 && data.status === 'wandering') {
+                    playSound('fail');
+                    showTipBubble(e.clientX, e.clientY);
+                }
+            });
+
+            return div;
+        }
+
+        // 동물을 자리에 꽁꽁 얼리는 함수
+        function freezeAnimal(animal) {
+            if (animal.status !== 'wandering') return;
+
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+
+            animal.status = 'frozen';
+            
+            animal.element.classList.remove('floating-animal');
+            animal.element.querySelector('.ice-layer').classList.remove('opacity-0');
+            animal.element.querySelector('.ice-layer').classList.add('opacity-100');
+            animal.element.style.transform = 'scale(0.95)';
+            
+            playSound(currentStage === 1 ? 'click' : 'doubleclick');
+
+            frozenCount++;
+            scoreBadge.innerText = `${frozenCount} / ${totalStageAnimals}`;
+
+            if (currentStage === 1) {
+                guideText.innerHTML = `1부: 도망치는 동물들을 마우스로 "한 번 클릭"하여 얼려보세요! (${frozenCount}/10마리 얼림)`;
+            } else {
+                guideText.innerHTML = `1부: 도망치는 동물들을 마우스로 "더블클릭"하여 얼려보세요! (${frozenCount}/10마리 얼림)`;
+            }
+
+            // 모든 동물을 얼렸는지 검사
+            if (frozenCount >= totalStageAnimals) {
+                transitionToDragPhase();
+            }
+        }
+
+        // 1부에서 2부(드래그 페이즈)로 전환하는 트리거
+        function transitionToDragPhase() {
+            currentPhase = 'drag_phase';
+            playSound('phase');
+
+            guideBanner.className = "w-full bg-blue-600 text-white py-3 px-6 text-center text-sm md:text-base font-bold flex items-center justify-center gap-2 shadow-md transition-colors duration-300";
+            guideText.innerHTML = "💡 <strong>2부 미션 시작!</strong> 멈춘 동물들을 마우스로 꾹 누른 뒤 <strong>오른쪽 '안전한 우리'로 이사(드래그)</strong>시켜 주세요!";
+            
+            scoreLabel.innerText = "안전하게 가둔 동물";
+            scoreLabel.className = "text-xs text-blue-500 font-bold block";
+            scoreBadge.innerText = `${cagedCount} / ${totalStageAnimals}`;
+            scoreBadge.className = "text-xl font-black text-blue-600";
+
+            document.getElementById('field-bg-text').innerHTML = "❄️ 모든 동물이 얼었어요! 이제 우리로 드래그해요! ❄️";
+        }
+
+        /* ========================================================
+           STREAMING_CHUNK: Designing Drag-and-Drop and Cage boundaries...
+           2부: 드래그 앤 드롭 메커니즘
+           ======================================================== */
+        function handleAnimalDragStart(animal, event) {
+            activeAnimal = animal;
+            isDragging = true;
+            animal.status = 'caught';
+
+            animal.element.querySelector('.ice-layer').style.opacity = '0.3';
+            animal.element.style.transform = 'scale(1.1) rotate(4deg)';
+            animal.element.style.zIndex = '50';
+
+            playSound('drag');
+
+            const rect = animal.element.getBoundingClientRect();
+            mouseOffset.x = event.clientX - rect.left;
+            mouseOffset.y = event.clientY - rect.top;
+
+            window.addEventListener('mousemove', handleDragMove);
+            window.addEventListener('mouseup', handleDragEnd);
+        }
+
+        function handleDragMove(e) {
+            if (!isDragging || !activeAnimal) return;
+
+            const fieldRect = gameField.getBoundingClientRect();
+            
+            let relativeX = e.clientX - fieldRect.left - mouseOffset.x;
+            let relativeY = e.clientY - fieldRect.top - mouseOffset.y;
+
+            const maxW = gameField.clientWidth - 70;
+            const maxH = gameField.clientHeight - 70;
+
+            if (relativeX < 0) relativeX = 0;
+            if (relativeX > maxW) relativeX = maxW;
+            if (relativeY < 0) relativeY = 0;
+            if (relativeY > maxH) relativeY = maxH;
+
+            activeAnimal.x = relativeX;
+            activeAnimal.y = relativeY;
+
+            activeAnimal.element.style.left = `${relativeX}px`;
+            activeAnimal.element.style.top = `${relativeY}px`;
+
+            const cageRect = cageArea.getBoundingClientRect();
+            if (e.clientX >= cageRect.left && e.clientX <= cageRect.right &&
+                e.clientY >= cageRect.top && e.clientY <= cageRect.bottom) {
+                cageArea.classList.add('bg-amber-200', 'border-amber-600', 'scale-[1.03]');
+            } else {
+                cageArea.classList.remove('bg-amber-200', 'border-amber-600', 'scale-[1.03]');
+            }
+        }
+
+        function handleDragEnd(e) {
+            if (!isDragging || !activeAnimal) return;
+
+            const cageRect = cageArea.getBoundingClientRect();
+            const isInCage = (
+                e.clientX >= cageRect.left && e.clientX <= cageRect.right &&
+                e.clientY >= cageRect.top && e.clientY <= cageRect.bottom
+            );
+
+            window.removeEventListener('mousemove', handleDragMove);
+            window.removeEventListener('mouseup', handleDragEnd);
+
+            isDragging = false;
+            cageArea.classList.remove('bg-amber-200', 'border-amber-600', 'scale-[1.03]');
+
+            if (isInCage) {
+                activeAnimal.status = 'caged';
+                playSound('drop');
+
+                activeAnimal.element.style.position = 'relative';
+                activeAnimal.element.style.left = 'auto';
+                activeAnimal.element.style.top = 'auto';
+                activeAnimal.element.style.transform = 'scale(1)';
+                activeAnimal.element.classList.remove('z-50', 'w-[72px]', 'h-[72px]');
+                activeAnimal.element.classList.add('w-[52px]', 'h-[52px]', 'rounded-xl', 'p-1');
+                
+                activeAnimal.element.querySelector('.ice-layer').remove();
+                const nameTag = activeAnimal.element.querySelector('span:last-of-type');
+                if (nameTag) nameTag.remove();
+                
+                const emojiSpan = activeAnimal.element.querySelector('span:first-of-type');
+                if (emojiSpan) emojiSpan.className = "text-2xl pointer-events-none";
+
+                cageGrid.appendChild(activeAnimal.element);
+
+                cagedCount++;
+                scoreBadge.innerText = `${cagedCount} / ${totalStageAnimals}`;
+
+                checkStageCompletion();
+
+            } else {
+                playSound('fail');
+                activeAnimal.status = 'frozen';
+                activeAnimal.element.querySelector('.ice-layer').style.opacity = '1';
+                activeAnimal.element.style.transform = 'scale(0.95)';
+                activeAnimal.element.style.zIndex = '20';
+            }
+
+            activeAnimal = null;
+        }
+
+        // 더블클릭 유도 도움말 띄우기
+        function showTipBubble(x, y) {
+            const tip = document.getElementById('tip-bubble');
+            const fieldRect = gameField.getBoundingClientRect();
+            
+            tip.style.left = `${x - fieldRect.left}px`;
+            tip.style.top = `${y - fieldRect.top - 10}px`;
+            tip.classList.remove('hidden');
+            tip.style.opacity = '1';
+
+            setTimeout(() => {
+                tip.style.opacity = '0';
+                setTimeout(() => tip.classList.add('hidden'), 200);
+            }, 1200);
+        }
+
+        /* ========================================================
+           STREAMING_CHUNK: Implementing the 3-second countdown and escape logic...
+           3초 제한 시간 및 우리 우클릭 잠금 타이머 처리
+           ======================================================== */
+        function checkStageCompletion() {
+            if (cagedCount >= totalStageAnimals) {
+                cancelAnimationFrame(animationFrameId);
+                setTimeout(() => {
+                    triggerLockingPhase();
+                }, 500);
+            }
+        }
+
+        // 마우스 오른쪽 클릭으로 잠그기 시퀀스 및 3초 카운트다운 시작
+        function triggerLockingPhase() {
+            currentPhase = 'locking_phase';
+            
+            guideBanner.className = "w-full bg-red-600 text-white py-3 px-6 text-center text-sm md:text-base font-bold flex items-center justify-center gap-2 shadow-md transition-colors duration-300";
+            guideText.innerHTML = "🚨 <strong>마지막 초비상!</strong> 동물들이 문을 열고 뛰쳐나갑니다! 3초 안에 자물쇠에 <strong class='text-yellow-300'>마우스 오른쪽 클릭</strong>을 눌러 잠그세요!";
+            
+            document.getElementById('stage-badge').innerText = "최종단계 : 잠금";
+            document.getElementById('stage-badge').className = "text-base font-bold text-red-700 bg-red-200 px-3 py-0.5 rounded-full";
+
+            cageArea.classList.add('shaking-cage', 'border-red-500', 'bg-red-50');
+
+            lockContainer.classList.remove('opacity-30', 'pointer-events-none');
+            lockContainer.classList.add('bg-red-100', 'border-red-400', 'animate-pulse');
+            lockIcon.className = "text-3xl text-red-600";
+            lockIcon.innerHTML = `<i class="fa-solid fa-lock-open"></i>`;
+            lockText.innerHTML = "이곳을 마우스 우클릭!";
+            lockText.classList.add('text-red-900', 'font-black');
+
+            // 3초 타이머 및 카운트다운 배지 연출 시작
+            countdownValue = 3;
+            const countdownBadge = document.getElementById('countdown-badge');
+            const countdownNumText = document.getElementById('countdown-number');
+            
+            countdownBadge.classList.remove('hidden');
+            countdownNumText.innerText = countdownValue;
+            playSound('warning_tick');
+
+            lockTimer = setInterval(() => {
+                countdownValue--;
+                if (countdownValue > 0) {
+                    countdownNumText.innerText = countdownValue;
+                    playSound('warning_tick');
+                } else {
+                    clearInterval(lockTimer);
+                    countdownBadge.classList.add('hidden');
+                    triggerEscape();
+                }
+            }, 1000);
+
+            window.addEventListener('contextmenu', handleRightClick);
+        }
+
+        // 3초 제한을 넘겨 동물들이 탈출한 경우의 루틴
+        function triggerEscape() {
+            currentPhase = 'escaped';
+            playSound('fail');
+            
+            // 우클릭 이벤트 잠금 제거
+            window.removeEventListener('contextmenu', handleRightClick);
+
+            // 우리 흔들림 정지 및 탈출 완료 비주얼 적용
+            cageArea.classList.remove('shaking-cage');
+            cageGrid.innerHTML = ''; // 우리 안의 동물이 도망침
+
+            // 탈출 알림 모달 출력
+            document.getElementById('escape-modal').classList.remove('hidden');
+        }
+
+        // 탈출 모달을 닫고 현재 단계를 처음부터 다시 구조
+        function retryCurrentStage() {
+            document.getElementById('escape-modal').classList.add('hidden');
+            setupStage(currentStage);
+        }
+
+        // 마우스 우클릭을 감지했을 때 성공적으로 잠금 처리
+        function handleRightClick(e) {
+            if (currentPhase !== 'locking_phase') return;
+            
+            e.preventDefault(); // 기본 콘텍스트 메뉴 완전 차단
+
+            const rect = lockContainer.getBoundingClientRect();
+            const hit = (
+                e.clientX >= rect.left - 40 && e.clientX <= rect.right + 40 &&
+                e.clientY >= rect.top - 40 && e.clientY <= rect.bottom + 40
+            );
+
+            if (hit) {
+                // 성공했으므로 타이머 파괴 및 카운트다운 배지 숨김
+                clearInterval(lockTimer);
+                document.getElementById('countdown-badge').classList.add('hidden');
+
+                currentPhase = 'locked';
+                playSound('lock');
+                
+                cageArea.classList.remove('shaking-cage', 'border-red-500', 'bg-red-50');
+                cageArea.classList.add('border-emerald-500', 'bg-emerald-50');
+
+                lockContainer.classList.remove('bg-red-100', 'border-red-400', 'animate-pulse');
+                lockContainer.classList.add('bg-emerald-100', 'border-emerald-400');
+                
+                lockIcon.className = "text-3xl text-emerald-600 transform scale-110";
+                lockIcon.innerHTML = `<i class="fa-solid fa-lock"></i>`; 
+                
+                lockText.innerHTML = "철컥! 문 잠금 대성공!";
+                lockText.className = "text-[10px] text-emerald-800 font-bold";
+
+                const cagedNodes = cageGrid.children;
+                for (let i = 0; i < cagedNodes.length; i++) {
+                    const el = cagedNodes[i];
+                    el.className = "bg-emerald-100 rounded-xl p-1 w-[52px] h-[52px] flex items-center justify-center border border-emerald-300 shadow-inner";
+                }
+
+                window.removeEventListener('contextmenu', handleRightClick);
+
+                setTimeout(() => {
+                    if (currentStage === 1) {
+                        playSound('victory');
+                        const modal = document.getElementById('stage-clear-modal');
+                        document.getElementById('modal-title').innerText = "🎉 1단계 완벽 성공! 🎉";
+                        document.getElementById('modal-desc').innerText = "마우스 클릭과 드래그, 그리고 제한시간 내 우클릭 자물쇠 잠금까지 모두 멋지게 통과했어요!\n이제 2단계에서는 더 빠르게 도망치는 동물들이 나타납니다. 연속 두 번 째깍! '더블클릭'으로 얼려볼까요?";
+                        modal.classList.remove('hidden');
+                    } else if (currentStage === 2) {
+                        showVictoryScreen();
+                    }
+                }, 1000);
+            }
+        }
+
+        /* ========================================================
+           STREAMING_CHUNK: Setting up game control and stage triggers...
+           게임 진행 및 흐름 제어 함수들
+           ======================================================== */
+        function startGame() {
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+            playSound('click');
+
+            document.getElementById('start-screen').classList.add('hidden');
+            document.getElementById('game-screen').classList.remove('hidden');
+
+            setupStage(1);
+        }
+
+        function setupStage(stageNum) {
+            currentStage = stageNum;
+            currentPhase = 'freeze_phase';
+            frozenCount = 0;
+            cagedCount = 0;
+            
+            // 기존 타이머 잔여물 완전 격파
+            if (lockTimer) {
+                clearInterval(lockTimer);
+                lockTimer = null;
+            }
+            document.getElementById('countdown-badge').classList.add('hidden');
+
+            animals = [];
+            animalsContainer.innerHTML = '';
+            cageGrid.innerHTML = '';
+
+            scoreLabel.innerText = "얼린 동물 수";
+            scoreLabel.className = "text-xs text-emerald-500 font-bold block";
+            scoreBadge.innerText = `0 / ${totalStageAnimals}`;
+            scoreBadge.className = "text-xl font-black text-emerald-600";
+
+            lockContainer.className = "w-full flex flex-col items-center justify-center gap-1 bg-amber-50 border border-amber-300 rounded-2xl py-2 cursor-pointer transition-all duration-300 opacity-30 pointer-events-none";
+            lockIcon.className = "text-2xl text-slate-400";
+            lockIcon.innerHTML = `<i class="fa-solid fa-lock-open"></i>`;
+            lockText.innerHTML = "우클릭으로 잠금<br>(동물 다 모으면 활성화!)";
+            lockText.className = "text-[10px] text-amber-800 font-bold text-center";
+            cageArea.className = "absolute top-4 right-4 bottom-4 w-[30%] bg-amber-100 rounded-3xl border-4 border-dashed border-amber-400 shadow-inner flex flex-col items-center justify-between p-4 z-0 transition-all duration-300";
+
+            document.getElementById('field-bg-text').innerHTML = "🌳 넓고 넓은 초원 (동물을 얼려주세요!) 🌳";
+
+            if (stageNum === 1) {
+                document.getElementById('stage-badge').innerText = "1단계 : 얼리고 드래그";
+                document.getElementById('stage-badge').className = "text-base font-bold text-sky-700 bg-sky-200 px-3 py-0.5 rounded-full";
+                guideBanner.className = "w-full bg-amber-500 text-white py-3 px-6 text-center text-sm md:text-base font-bold flex items-center justify-center gap-2 shadow-md transition-colors duration-300";
+                guideText.innerHTML = "1부: 도망치는 동물들을 마우스로 <strong class='text-yellow-200'>\"한 번 클릭\"</strong>하여 자리에 얼리세요! (0/10마리 얼림)";
+
+                STAGE1_ANIMAL_TEMPLATES.forEach(tmpl => {
+                    let animalObj = { ...tmpl, status: 'wandering' };
+                    initPhysics(animalObj, 1);
+                    const el = createAnimalElement(animalObj);
+                    animalObj.element = el;
+                    animalsContainer.appendChild(el);
+                    animals.push(animalObj);
+                });
+
+            } else if (stageNum === 2) {
+                document.getElementById('stage-badge').innerText = "2단계 : 더블클릭 얼리기";
+                document.getElementById('stage-badge').className = "text-base font-bold text-orange-700 bg-orange-200 px-3 py-0.5 rounded-full";
+                guideBanner.className = "w-full bg-orange-500 text-white py-3 px-6 text-center text-sm md:text-base font-bold flex items-center justify-center gap-2 shadow-md transition-colors duration-300";
+                guideText.innerHTML = "1부: 더 빠른 동물들을 마우스로 <strong class='text-yellow-200'>\"두 번 빠르게(더블클릭)\"</strong>하여 얼리세요! (0/10마리 얼림)";
+
+                STAGE2_ANIMAL_TEMPLATES.forEach(tmpl => {
+                    let animalObj = { ...tmpl, status: 'wandering' };
+                    initPhysics(animalObj, 2);
+                    const el = createAnimalElement(animalObj);
+                    animalObj.element = el;
+                    animalsContainer.appendChild(el);
+                    animals.push(animalObj);
+                });
+            }
+
+            if (animationFrameId) cancelAnimationFrame(animationFrameId);
+            updatePhysics();
+        }
+
+        function nextStage() {
+            playSound('click');
+            document.getElementById('stage-clear-modal').classList.add('hidden');
+            setupStage(2);
+        }
+
+        /* ========================================================
+           STREAMING_CHUNK: Handling certificate generation and licensing...
+           승리 화면 연출 및 파티클(종이가루)
+           ======================================================== */
+        function showVictoryScreen() {
+            playSound('victory');
+            
+            cancelAnimationFrame(animationFrameId);
+            document.getElementById('game-screen').classList.add('hidden');
+            document.getElementById('victory-screen').classList.remove('hidden');
+
+            startConfetti();
+        }
+
+        // 키보드 이름 입력 요소 삭제에 맞춰 리셋 과정 단순화
+        function restartGame() {
+            playSound('click');
+            const confettis = document.querySelectorAll('.confetti');
+            confettis.forEach(c => c.remove());
+
+            document.getElementById('victory-screen').classList.add('hidden');
+            document.getElementById('game-screen').classList.remove('hidden');
+            setupStage(1);
+        }
+
+        function startConfetti() {
+            const colors = ['#f59e0b', '#10b981', '#3b82f6', '#ec4899', '#8b5cf6', '#ef4444'];
+            for (let i = 0; i < 70; i++) {
+                const conf = document.createElement('div');
+                conf.className = 'confetti';
+                conf.style.left = `${Math.random() * 100}vw`;
+                conf.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                conf.style.animationDelay = `${Math.random() * 2.5}s`;
+                conf.style.animationDuration = `${Math.random() * 2 + 1.5}s`;
+                conf.style.width = `${Math.random() * 6 + 7}px`;
+                conf.style.height = `${Math.random() * 12 + 5}px`;
+                conf.style.transform = `rotate(${Math.random() * 360}deg)`;
+                document.body.appendChild(conf);
+            }
+        }
+
+        // 전체 윈도우 우클릭 방지 활성화
+        window.addEventListener('contextmenu', (e) => {
+            if (currentPhase === 'locking_phase') {
+                e.preventDefault();
+            }
+        });
+    </script>
+</body>
+</html>
